@@ -4,45 +4,57 @@ import (
 	"fmt"
 )
 
-type MyTree struct {
-	Left  *MyTree
-	Value int
-	Right *MyTree
+type Tree struct {
+	Left  *Tree
+	Val   int
+	Right *Tree
 }
 
-func insert(t *MyTree, v int) *MyTree {
+func (t *Tree) Add(v int) *Tree {
 	if t == nil {
-		return &MyTree{nil, v, nil}
-	}
-	if t.Value < v {
-		t.Left = insert(t.Left, v)
+		t = &Tree{nil, v, nil}
 		return t
 	}
-	t.Right = insert(t.Right, v)
+	if t.Val < v {
+		t.Left = t.Left.Add(v)
+		return t
+	}
+	t.Right = t.Right.Add(v)
 	return t
 }
 
-func Walk(t *MyTree, ch chan int) {
+func (t *Tree) Print() {
 	if t == nil {
 		return
 	}
+	t.Left.Print()
+	fmt.Println(t.Val)
+	t.Right.Print()
 
-	Walk(t.Left, ch)
-	ch <- t.Value
-	Walk(t.Right, ch)
+
 }
 
-func Walker(t *MyTree) chan int {
+func (t* Tree) Walker()chan int {
 	ch := make(chan int)
-	go func() {
-		Walk(t, ch)
+	go func (){
+		t.Walk(ch)
 		close(ch)
 	}()
 	return ch
 }
 
-func compare(t1, t2 *MyTree) bool {
-	ch1, ch2 := Walker(t1), Walker(t2)
+func (t *Tree)Walk(ch chan<- int) {
+	if t == nil {
+		return
+	}
+	t.Left.Walk(ch)
+	ch<-t.Val
+	t.Right.Walk(ch)
+}
+
+func (t1 *Tree)Compare(t2 *Tree) bool {
+	ch1, ch2 := t1.Walker(), t2.Walker()
+
 	for {
 		v1, ok1 := <-ch1
 		v2, ok2 := <-ch2
@@ -56,31 +68,21 @@ func compare(t1, t2 *MyTree) bool {
 }
 
 func main() {
-	var t *MyTree
-	var t2 *MyTree
-	t = insert(t, 6)
-	t = insert(t, 10)
-	t = insert(t, 1)
-	t = insert(t, 3)
-	t = insert(t, 5)
-	t = insert(t, 4)
-	t = insert(t, 9)
+	var t1, t2 *Tree
 
-	t2 = insert(t2, 6)
-	t2 = insert(t2, 10)
-	t2 = insert(t2, 1)
-	t2 = insert(t2, 3)
-	t2 = insert(t2, 7)
-	t2 = insert(t2, 4)
-	t2 = insert(t2, 9)
-
-	ch := Walker(t)
-	for {
-		v, ok := <-ch
-		if !ok {
-			break
-		}
-		fmt.Println(v)
-	}
-	fmt.Println(compare(t, t2))
+	t1 = t1.Add(6)
+	fmt.Println(t1)
+	t1.Add(8)
+	t1.Add(9)
+	t1.Add(4)
+	t1.Add(10)
+	
+	t2 = t2.Add(6)
+	t2.Add(8)
+	t2.Add(9)
+	t2.Add(4)
+	t2.Add(10)
+	t1.Print()
+	t2.Print()
+	fmt.Println(t1.Compare(t2))
 }
